@@ -1,0 +1,40 @@
+{# templates/login.html #}
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Login - Online Examination System{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card mt-5">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Login to Your Account</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'exam_app:login' %}">
+                        {% csrf_token %} {# Django security feature #}
+                        {% if form.errors %}
+                            <div class="alert alert-danger">
+                                Your username and password didn't match. Please try again.
+                            </div>
+                        {% endif %}
+                        <div class="mb-3">
+                            <label for="id_username" class="form-label">Username</label>
+                            <input type="text" name="username" id="id_username" class="form-control" autofocus required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_password" class="form-label">Password</label>
+                            <input type="password" name="password" id="id_password" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Login</button>
+                        <input type="hidden" name="next" value="{{ next }}"> {# To redirect back after login #}
+                    </form>
+                    <p class="mt-3 text-center">
+                        Don't have an account? <a href="{% url 'exam_app:register' %}">Register here</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

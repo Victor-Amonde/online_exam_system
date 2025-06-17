@@ -1,0 +1,7 @@
+/* static/css/style.css */
+body {
+    padding-top: 56px; /* Adjust for fixed navbar if you make it fixed */
+}
+.container {
+    margin-top: 20px;
+}

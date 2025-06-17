@@ -1,4 +1,4 @@
-#!/home/victor/Desktop/online_exam_system/venv/bin/python
+#!/home/victor/Desktop/Gemini/venv/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys

@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Online Examination System{% endblock %}
+
+{% block content %}
+    <h2 class="mb-4">Your Dashboard</h2>
+    <p>This is a placeholder for your personalized dashboard. Content here will change based on whether you are a student, teacher, or admin.</p>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Latest Announcements</h5>
+                    <p class="card-text">No new announcements at the moment.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Quick Links</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><a href="#">View My Courses</a></li>
+                        <li class="list-group-item"><a href="#">Start an Exam</a></li>
+                        <li class="list-group-item"><a href="#">Check My Scores</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

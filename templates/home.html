@@ -1,0 +1,28 @@
+{% extends 'base.html' %} {# Inherit from base.html #}
+
+{% block title %}Home - Online Examination System{% endblock %}
+
+{% block content %}
+    <div class="jumbotron text-center">
+        <h1 class="display-4">Welcome to the Online Examination System!</h1>
+        <p class="lead">Your platform for managing and taking online exams.</p>
+        <hr class="my-4">
+        <p>Ready to get started? Register or log in to access your exams.</p>
+        <a class="btn btn-primary btn-lg" href="{% url 'exam_app:register' %}" role="button">Register Now</a>
+        <a class="btn btn-secondary btn-lg" href="#" role="button">Login (Coming Soon)</a>
+    </div>
+    <div class="row mt-5">
+        <div class="col-md-4">
+            <h3>For Students</h3>
+            <p>Attend online examinations, view your scores, and track your attempts.</p>
+        </div>
+        <div class="col-md-4">
+            <h3>For Teachers</h3>
+            <p>Manage courses, create question sets, and approve student results.</p>
+        </div>
+        <div class="col-md-4">
+            <h3>For Admins</h3>
+            <p>Full control over the system, manage users, courses, and teacher salaries.</p>
+        </div>
+    </div>
+{% endblock content %}
