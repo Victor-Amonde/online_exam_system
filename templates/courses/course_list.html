@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Course Management{% endblock %}
+
+{% block content %}
+    <h2 class="mb-4">Course Management</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>{% if request.user.is_superuser or request.user.is_staff %}All Courses{% else %}My Courses{% endif %}</h3>
+        <a href="{% url 'exam_app:course_create' %}" class="btn btn-primary">Add New Course</a>
+    </div>
+
+    {% if courses %}
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Course Name</th>
+                        <th>Total Questions</th>
+                        <th>Total Marks</th>
+                        {% if request.user.is_superuser or request.user.is_staff %}
+                            <th>Teacher</th>
+                        {% endif %}
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for course in courses %}
+                        <tr>
+                            <td>{{ course.name }}</td>
+                            <td>{{ course.total_questions }}</td>
+                            <td>{{ course.total_marks }}</td>
+                            {% if request.user.is_superuser or request.user.is_staff %}
+                                <td>{% if course.teacher %}{{ course.teacher.username }}{% else %}N/A{% endif %}</td>
+                            {% endif %}
+                            <td>
+                                <a href="{% url 'exam_app:course_edit' course.pk %}" class="btn btn-sm btn-info me-2">Edit</a>
+                                <a href="{% url 'exam_app:course_delete' course.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info" role="alert">
+            No courses found. Click "Add New Course" to get started!
+        </div>
+    {% endif %}
+{% endblock content %}

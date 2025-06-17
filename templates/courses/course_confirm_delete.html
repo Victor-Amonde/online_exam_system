@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Delete Course{% endblock %}
+
+{% block content %}
+    <h2 class="mb-4">Delete Course</h2>
+
+    <div class="alert alert-danger" role="alert">
+        <h4 class="alert-heading">Confirm Deletion</h4>
+        <p>Are you sure you want to delete the course "<strong>{{ course.name }}</strong>"?</p>
+        <p>This action cannot be undone.</p>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        <a href="{% url 'exam_app:course_list' %}" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+{% endblock content %}

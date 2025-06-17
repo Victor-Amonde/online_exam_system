@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Student Dashboard - Online Examination System{% endblock %}
+
+{% block content %}
+    <h2 class="mb-4">Welcome, Student {{ user.username }}!</h2>
+    <p class="lead">Here you can find your available exams and view your past results.</p>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Available Examinations</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">List of courses/exams will appear here.</p>
+                    <a href="#" class="btn btn-outline-success">Browse Exams</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">My Results</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">View your scores and attempts for completed exams.</p>
+                    <a href="#" class="btn btn-outline-info">View Results</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="alert alert-warning mt-4" role="alert">
+        Detailed content and functionality for students coming in the next steps!
+    </div>
+{% endblock content %}

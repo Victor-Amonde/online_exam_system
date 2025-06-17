@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Teacher Dashboard - Online Examination System{% endblock %}
+
+{% block content %}
+    <h2 class="mb-4">Welcome, Teacher {{ user.username }}!</h2>
+    <p class="lead">Manage your courses, question sets, and view student progress.</p>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Course Management</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Add, edit, or delete courses you teach.</p>
+		    <a href="{% url 'exam_app:course_list' %}" class="btn btn-outline-primary">Manage Courses</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Question Set Management</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Create and update question sets for your courses.</p>
+                    <a href="#" class="btn btn-outline-danger">Manage Questions</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">My Students</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">View the total number of students.</p>
+                    <a href="#" class="btn btn-outline-info">View Students</a>
+                </div>
+            </div>
+        </div>
+         <div class="col-md-6">
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Teacher Salary</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Your salary information will appear here once set by admin.</p>
+                    <a href="#" class="btn btn-outline-secondary">View Salary</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="alert alert-warning mt-4" role="alert">
+        Detailed content and functionality for teachers coming in the next steps!
+    </div>
+{% endblock content %}
