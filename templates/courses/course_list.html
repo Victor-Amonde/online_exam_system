@@ -44,6 +44,7 @@
                                 <td>{% if course.teacher %}{{ course.teacher.username }}{% else %}N/A{% endif %}</td>
                             {% endif %}
                             <td>
+				<a href="{% url 'exam_app:question_list' course.pk %}" class="btn btn-sm btn-warning me-2">Manage Questions</a>    
                                 <a href="{% url 'exam_app:course_edit' course.pk %}" class="btn btn-sm btn-info me-2">Edit</a>
                                 <a href="{% url 'exam_app:course_delete' course.pk %}" class="btn btn-sm btn-danger">Delete</a>
                             </td>

@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Delete Question{% endblock %}
+
+{% block content %}
+    <h2 class="mb-4">Delete Question</h2>
+
+    <div class="alert alert-danger" role="alert">
+        <h4 class="alert-heading">Confirm Deletion</h4>
+        <p>Are you sure you want to delete the question:</p>
+        <p><strong>"{{ question.question_text|truncatechars:150 }}"</strong> from course "<strong>{{ course.name }}</strong>"?</p>
+        <p>This action cannot be undone.</p>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        <a href="{% url 'exam_app:question_list' course.pk %}" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+{% endblock content %}

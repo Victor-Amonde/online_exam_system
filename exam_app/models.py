@@ -37,15 +37,15 @@ class Course(models.Model):
 class Question(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     question_text = models.TextField()
-    option1 = models.CharField(max_length=200)
-    option2 = models.CharField(max_length=200)
-    option3 = models.CharField(max_length=200)
-    option4 = models.CharField(max_length=200)
-    correct_answer = models.CharField(max_length=200) # Store the correct option text or index
-    marks = models.IntegerField(default=1) # Marks for this specific question
+    # Add the missing choice fields here:
+    choice1 = models.CharField(max_length=255)
+    choice2 = models.CharField(max_length=255)
+    choice3 = models.CharField(max_length=255)
+    choice4 = models.CharField(max_length=255)
+    correct_choice = models.CharField(max_length=255) # This stores the text of the correct answer
 
     def __str__(self):
-        return f"{self.course.name} - {self.question_text[:50]}..." # Display first 50 chars of question
+        return f"Q: {self.question_text[:50]}... (Course: {self.course.name})"
 
 class Attempt(models.Model):
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='exam_attempts')
@@ -67,3 +67,46 @@ class TeacherSalary(models.Model):
 
     def __str__(self):
         return f"Salary for {self.teacher.username}: ${self.salary}"
+
+class Exam(models.Model):
+    student = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'is_student': True})
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    score = models.IntegerField(default=0)
+    total_questions = models.IntegerField(default=0) # Store actual questions count for this attempt
+    total_possible_marks = models.IntegerField(default=0) # Store max marks for this attempt
+    date_taken = models.DateTimeField(auto_now_add=True)
+    is_completed = models.BooleanField(default=False) # To track if the exam was finished
+
+    class Meta:
+        unique_together = ('student', 'course', 'date_taken') # A student can take the same course multiple times
+
+    def __str__(self):
+        return f"{self.student.username}'s exam for {self.course.name} on {self.date_taken.strftime('%Y-%m-%d %H:%M')}"
+
+class StudentAnswer(models.Model):
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name='student_answers')
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    chosen_answer = models.CharField(max_length=255) # Stores the text of the chosen option
+    is_correct = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('exam', 'question') # A student answers each question once per exam
+
+    def __str__(self):
+        return f"Exam {self.exam.id} | Q{self.question.id}: {self.chosen_answer} ({'Correct' if self.is_correct else 'Incorrect'})"
+
+class Result(models.Model):
+    student = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'is_student': True})
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    exam = models.OneToOneField(Exam, on_delete=models.CASCADE, primary_key=True) # One result per exam attempt
+    score = models.IntegerField()
+    total_marks = models.IntegerField()
+    percentage = models.FloatField()
+    date_achieved = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date_achieved'] # Order results by most recent first
+
+    def __str__(self):
+        return f"{self.student.username}'s Result in {self.course.name}: {self.score}/{self.total_marks} ({self.percentage:.2f}%)"
+

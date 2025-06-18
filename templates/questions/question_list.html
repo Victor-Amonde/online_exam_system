@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Questions for {{ course.name }}{% endblock %}
+
+{% block content %}
+    <h2 class="mb-4">Questions for "{{ course.name }}"</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>Question List</h3>
+        <div>
+            <a href="{% url 'exam_app:question_create' course.pk %}" class="btn btn-primary me-2">Add New Question</a>
+            <a href="{% url 'exam_app:course_list' %}" class="btn btn-secondary">Back to Courses</a>
+        </div>
+    </div>
+
+    {% if questions %}
+        <div class="accordion" id="questionsAccordion">
+            {% for question in questions %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading{{ question.pk }}">
+                        <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ question.pk }}" aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" aria-controls="collapse{{ question.pk }}">
+                            Question {{ forloop.counter }}: {{ question.question_text|truncatechars:80 }}
+                        </button>
+                    </h2>
+                    <div id="collapse{{ question.pk }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" aria-labelledby="heading{{ question.pk }}" data-bs-parent="#questionsAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Question:</strong> {{ question.question_text }}</p>
+                            <ul class="list-group list-group-flush mb-3">
+                                <li class="list-group-item {% if question.choice1 == question.correct_choice %}list-group-item-success{% endif %}"><strong>A:</strong> {{ question.choice1 }}</li>
+                                <li class="list-group-item {% if question.choice2 == question.correct_choice %}list-group-item-success{% endif %}"><strong>B:</strong> {{ question.choice2 }}</li>
+                                <li class="list-group-item {% if question.choice3 == question.correct_choice %}list-group-item-success{% endif %}"><strong>C:</strong> {{ question.choice3 }}</li>
+                                <li class="list-group-item {% if question.choice4 == question.correct_choice %}list-group-item-success{% endif %}"><strong>D:</strong> {{ question.choice4 }}</li>
+                            </ul>
+                            <p><strong>Correct Answer:</strong> <span class="badge bg-success">{{ question.correct_choice }}</span></p>
+
+                            <div class="mt-3">
+                                <a href="{% url 'exam_app:question_edit' course.pk question.pk %}" class="btn btn-sm btn-info me-2">Edit</a>
+                                <a href="{% url 'exam_app:question_delete' course.pk question.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info" role="alert">
+            No questions found for this course. Click "Add New Question" to add one!
+        </div>
+    {% endif %}
+{% endblock content %}
