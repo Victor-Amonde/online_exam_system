@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load exam_filters %} {# Load your custom filter if needed here too #}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">{{ page_title }}</h2>
+    <p class="lead">Answer the following questions for **{{ exam.course.name }}**</p>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" action="{% url 'exam_app:exam_take' exam.pk %}">
+        {% csrf_token %}
+
+        <div class="card mb-4">
+            <div class="card-body">
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label for="{{ field.id_for_label }}" class="form-label fs-5">{{ field.label }}</label>
+                        <div class="form-check">
+                            {# Render radio buttons manually for better control and Bootstrap styling #}
+                            {% for radio in field %}
+                                <input type="radio"
+                                       name="{{ field.html_name }}"
+                                       id="{{ radio.id_for_label }}"
+                                       value="{{ radio.data.value }}"
+                                       {% if radio.data.selected %}checked{% endif %}
+                                       class="{{ radio.data.attrs.class }}"
+                                       {% if radio.data.attrs.required %}required{% endif %}
+                                       >
+                                <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                    {{ radio.choice_label }}
+                                </label><br>
+                            {% endfor %}
+                        </div>
+                        {% if field.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in field.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <hr> {# Separator between questions #}
+                {% endfor %}
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-success btn-lg mt-3">Submit Exam</button>
+    </form>
+</div>
+{% endblock %}

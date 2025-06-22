@@ -39,6 +39,33 @@
             </ul>
         </div>
         </div>
+	{#added#}
+	{# base.html (simplified example of relevant section) #}
+
+<ul class="navbar-nav me-auto mb-2 mb-lg-0">
+    {% if request.user.is_authenticated %}
+        {% if request.user.is_student %}
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'exam_app:student_dashboard' %}">My Exams</a>
+            </li>
+        {% elif request.user.is_teacher %}
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'exam_app:teacher_dashboard' %}">Teacher Dashboard</a>
+            </li>
+        {% endif %}
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'exam_app:course_list' %}">Courses</a>
+        </li>
+        {# --- NEW ADMIN LINK --- #}
+        {% if request.user.is_staff or request.user.is_superuser %}
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'exam_app:admin_user_approval_list' %}">Approve Users</a>
+            </li>
+        {% endif %}
+        {# --- END NEW ADMIN LINK --- #}
+    {% endif %}
+</ul>
+	{#end added#}
     </nav>
 
     <div class="container mt-4">

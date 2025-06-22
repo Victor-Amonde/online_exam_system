@@ -1,0 +1,75 @@
+{% extends 'base.html' %} {# Assuming you have a base.html for consistent layout #}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">{{ page_title }}</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if unapproved_users %}
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Date Joined</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user_obj in unapproved_users %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ user_obj.username }}</td>
+                        <td>{{ user_obj.email }}</td>
+                        <td>
+                            {% if user_obj.is_student %}Student{% endif %}
+                            {% if user_obj.is_teacher %}Teacher{% endif %}
+                            {% if user_obj.is_staff and not user_obj.is_superuser %}Staff{% endif %}
+                            {% if user_obj.is_superuser %}Superuser{% endif %}
+                        </td>
+                        <td>{{ user_obj.date_joined|date:"M d, Y P" }}</td>
+                        <td>
+                            <form action="{% url 'exam_app:admin_approve_user' user_obj.pk %}" method="post" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" name="action" value="approve" class="btn btn-success btn-sm me-2">Approve</button>
+                            </form>
+                            {# Optional: Add a disapprove button if you want to explicitly un-approve later #}
+                            {#
+                            <form action="{% url 'exam_app:admin_approve_user' user_obj.pk %}" method="post" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" name="action" value="disapprove" class="btn btn-danger btn-sm">Disapprove</button>
+                            </form>
+                            #}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info" role="alert">
+            No user accounts are currently awaiting approval.
+        </div>
+    {% endif %}
+
+    <div class="mt-4">
+        {# Link back to a main admin dashboard, if you have one #}
+        {# <a href="{% url 'exam_app:admin_dashboard' %}" class="btn btn-secondary">Back to Admin Dashboard</a> #}
+        {# Or just general home/login #}
+        <a href="{% url 'exam_app:home' %}" class="btn btn-secondary">Back to Home</a>
+    </div>
+</div>
+{% endblock %}

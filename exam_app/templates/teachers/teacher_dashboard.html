@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">{{ page_title }}</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Your Courses</h4>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">You are managing <strong>{{ courses_count }}</strong> courses.</p>
+                    <a href="{% url 'exam_app:course_list' %}" class="btn btn-primary mt-2">Manage Courses</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">Student Results</h4>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">View and analyze student performance in your courses.</p>
+                    <a href="{% url 'exam_app:teacher_results_dashboard' %}" class="btn btn-success mt-2">View All Results</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3 class="mt-4 mb-3">Recent Student Activity</h3>
+    {% if recent_results %}
+        <ul class="list-group">
+            {% for result in recent_results %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ result.student.username }}</strong> completed {{ result.course.name }}
+                        <small class="text-muted d-block">{{ result.date_achieved|date:"F d, Y P" }}</small>
+                    </div>
+                    <span class="badge bg-info rounded-pill">{{ result.score }}/{{ result.total_marks }} ({{ result.percentage|floatformat:2 }}%)</span>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted">No recent exam submissions for your courses.</p>
+    {% endif %}
+
+</div>
+{% endblock %}
