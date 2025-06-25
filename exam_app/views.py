@@ -3,9 +3,27 @@ from django.contrib.auth.decorators import login_required, user_passes_test # Im
 from django.contrib import messages
 from .forms import CustomUserCreationForm, TeacherLoginForm, CourseForm, QuestionForm, StudentExamForm
 from django.db import transaction # Will use this for atomic saves
-from .models import User, Course, Question, Exam, StudentAnswer, Result
+from .models import User, Course, Question, Exam, StudentAnswer, Result, QUESTION_TYPES
+from django.db.models import Prefetch # <--- ENSURE THIS IS THE LINE (from django.db.models)
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import AuthenticationForm # Ensure this is imported
+from django.contrib.auth import views as auth_views
+from django.http import HttpResponse # Import HttpResponse for manual response if needed
+from django.utils import timezone # <--- ADD THIS IMPORT
+from django.forms import formset_factory # <--- ADD THIS IMPORT for formsets
+import math # <--- ADD THIS IMPORT for ceil function
+
+
+# Helper functions for role-based access checks
+def is_student(user):
+    return user.is_authenticated and user.is_student
+
+def is_teacher(user):
+    return user.is_authenticated and user.is_teacher and user.approved
+
+def is_admin(user):
+    return user.is_authenticated and (user.is_superuser or user.is_staff)
+
 
 def home(request):
     return render(request, 'home.html')
@@ -103,16 +121,6 @@ def login_view(request):
     else:
         form = AuthenticationForm()
     return render(request, 'registration/login.html', {'form': form, 'form_title': 'Login'})
-
-# Helper functions for role-based access checks
-def is_student(user):
-    return user.is_authenticated and user.is_student
-
-def is_teacher(user):
-    return user.is_authenticated and user.is_teacher and user.approved
-
-def is_admin(user):
-    return user.is_authenticated and (user.is_superuser or user.is_staff)
 
 # --- NEW ADMIN APPROVAL VIEWS ---
 
@@ -222,86 +230,86 @@ def course_delete(request, pk):
         return redirect('exam_app:course_list')
     return render(request, 'courses/course_confirm_delete.html', {'course': course})
 
-def question_list(request, course_pk):
-    course = get_object_or_404(Course, pk=course_pk)
-
-    # Authorization check: Teacher can only see questions for their own courses
-    if is_teacher(request.user) and course.teacher != request.user:
-        messages.error(request, "You are not authorized to view questions for this course.")
-        return redirect('exam_app:course_list')
-
-    questions = Question.objects.filter(course=course).order_by('id')
-    return render(request, 'questions/question_list.html', {'course': course, 'questions': questions})
-
-def question_create(request, course_pk):
-    course = get_object_or_404(Course, pk=course_pk)
-
-    # Authorization check: Teacher can only add questions to their own courses
-    if is_teacher(request.user) and course.teacher != request.user:
-        messages.error(request, "You are not authorized to add questions to this course.")
-        return redirect('exam_app:course_list')
-
-    if request.method == 'POST':
-        form = QuestionForm(request.POST, teacher_user=request.user, request=request) # Pass current user for form filtering
-        if form.is_valid():
-            question = form.save(commit=False)
-            # Ensure the question is linked to the correct course and not overridden by form's course dropdown
-            question.course = course
-            question.save()
-            messages.success(request, 'Question added successfully!')
-            return redirect('exam_app:question_list', course_pk=course.pk)
-        else:
-            messages.error(request, 'Error adding question. Please check the form.')
-    else:
-        # Pre-select the course in the form for creation
-        form = QuestionForm(initial={'course': course}, teacher_user=request.user, request=request)
-        # Disable the course field for teachers if they can only add to their course
-        if is_teacher(request.user) and course.teacher == request.user:
-            form.fields['course'].widget.attrs['readonly'] = True
-            form.fields['course'].widget.attrs['disabled'] = True
-            # A hidden input might be needed if disabled breaks POST submission for the field
-            # For now, let's rely on the view setting question.course = course
-    return render(request, 'questions/question_form.html', {'form': form, 'form_title': f'Add Question to {course.name}', 'course': course})
-
-def question_edit(request, course_pk, pk):
-    course = get_object_or_404(Course, pk=course_pk)
-    question = get_object_or_404(Question, pk=pk, course=course) # Ensure question belongs to this course
-
-    # Authorization check: Teacher can only edit questions in their own courses
-    if is_teacher(request.user) and course.teacher != request.user:
-        messages.error(request, "You are not authorized to edit questions in this course.")
-        return redirect('exam_app:course_list')
-
-    if request.method == 'POST':
-        form = QuestionForm(request.POST, instance=question, teacher_user=request.user, request=request)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Question updated successfully!')
-            return redirect('exam_app:question_list', course_pk=course.pk)
-        else:
-            messages.error(request, 'Error updating question. Please check the form.')
-    else:
-        form = QuestionForm(instance=question, teacher_user=request.user, request=request)
-        # Disable course field on edit too
-        if is_teacher(request.user) and course.teacher == request.user:
-            form.fields['course'].widget.attrs['readonly'] = True
-            form.fields['course'].widget.attrs['disabled'] = True
-    return render(request, 'questions/question_form.html', {'form': form, 'form_title': f'Edit Question for {course.name}', 'course': course})
-
-def question_delete(request, course_pk, pk):
-    course = get_object_or_404(Course, pk=course_pk)
-    question = get_object_or_404(Question, pk=pk, course=course)
-
-    # Authorization check: Teacher can only delete questions from their own courses
-    if is_teacher(request.user) and course.teacher != request.user:
-        messages.error(request, "You are not authorized to delete questions from this course.")
-        return redirect('exam_app:course_list')
-
-    if request.method == 'POST':
-        question.delete()
-        messages.success(request, 'Question deleted successfully!')
-        return redirect('exam_app:question_list', course_pk=course.pk)
-    return render(request, 'questions/question_confirm_delete.html', {'question': question, 'course': course})
+#def question_list(request, course_pk):
+#    course = get_object_or_404(Course, pk=course_pk)
+#
+#    # Authorization check: Teacher can only see questions for their own courses
+#    if is_teacher(request.user) and course.teacher != request.user:
+#        messages.error(request, "You are not authorized to view questions for this course.")
+#        return redirect('exam_app:course_list')
+#
+#    questions = Question.objects.filter(course=course).order_by('id')
+#    return render(request, 'questions/question_list.html', {'course': course, 'questions': questions})
+#
+#def question_create(request, course_pk):
+#    course = get_object_or_404(Course, pk=course_pk)
+#
+#    # Authorization check: Teacher can only add questions to their own courses
+#    if is_teacher(request.user) and course.teacher != request.user:
+#        messages.error(request, "You are not authorized to add questions to this course.")
+#        return redirect('exam_app:course_list')
+#
+#    if request.method == 'POST':
+#        form = QuestionForm(request.POST, teacher_user=request.user, request=request) # Pass current user for form filtering
+#        if form.is_valid():
+#            question = form.save(commit=False)
+#            # Ensure the question is linked to the correct course and not overridden by form's course dropdown
+#            question.course = course
+#            question.save()
+#            messages.success(request, 'Question added successfully!')
+#            return redirect('exam_app:question_list', course_pk=course.pk)
+#        else:
+#            messages.error(request, 'Error adding question. Please check the form.')
+#    else:
+#        # Pre-select the course in the form for creation
+#        form = QuestionForm(initial={'course': course}, teacher_user=request.user, request=request)
+#        # Disable the course field for teachers if they can only add to their course
+#        if is_teacher(request.user) and course.teacher == request.user:
+#            form.fields['course'].widget.attrs['readonly'] = True
+#            form.fields['course'].widget.attrs['disabled'] = True
+#            # A hidden input might be needed if disabled breaks POST submission for the field
+#            # For now, let's rely on the view setting question.course = course
+#    return render(request, 'questions/question_form.html', {'form': form, 'form_title': f'Add Question to {course.name}', 'course': course})
+#
+#def question_edit(request, course_pk, pk):
+#    course = get_object_or_404(Course, pk=course_pk)
+#    question = get_object_or_404(Question, pk=pk, course=course) # Ensure question belongs to this course
+#
+#    # Authorization check: Teacher can only edit questions in their own courses
+#    if is_teacher(request.user) and course.teacher != request.user:
+#        messages.error(request, "You are not authorized to edit questions in this course.")
+#        return redirect('exam_app:course_list')
+#
+#    if request.method == 'POST':
+#        form = QuestionForm(request.POST, instance=question, teacher_user=request.user, request=request)
+#        if form.is_valid():
+#            form.save()
+#            messages.success(request, 'Question updated successfully!')
+#            return redirect('exam_app:question_list', course_pk=course.pk)
+#        else:
+#            messages.error(request, 'Error updating question. Please check the form.')
+#    else:
+#        form = QuestionForm(instance=question, teacher_user=request.user, request=request)
+#        # Disable course field on edit too
+#        if is_teacher(request.user) and course.teacher == request.user:
+#            form.fields['course'].widget.attrs['readonly'] = True
+#            form.fields['course'].widget.attrs['disabled'] = True
+#    return render(request, 'questions/question_form.html', {'form': form, 'form_title': f'Edit Question for {course.name}', 'course': course})
+#
+#def question_delete(request, course_pk, pk):
+#    course = get_object_or_404(Course, pk=course_pk)
+#    question = get_object_or_404(Question, pk=pk, course=course)
+#
+#    # Authorization check: Teacher can only delete questions from their own courses
+#    if is_teacher(request.user) and course.teacher != request.user:
+#        messages.error(request, "You are not authorized to delete questions from this course.")
+#        return redirect('exam_app:course_list')
+#
+#    if request.method == 'POST':
+#        question.delete()
+#        messages.success(request, 'Question deleted successfully!')
+#        return redirect('exam_app:question_list', course_pk=course.pk)
+#    return render(request, 'questions/question_confirm_delete.html', {'question': question, 'course': course})
 
 # --- NEW TEACHER RESULT MANAGEMENT VIEWS ---
 def teacher_dashboard(request):
@@ -374,114 +382,199 @@ def student_dashboard(request):
 
 def exam_start(request, course_pk):
     course = get_object_or_404(Course, pk=course_pk)
-
-    # Get all questions for the course
-    questions = Question.objects.filter(course=course).order_by('?') # Randomize questions
+    questions = Question.objects.filter(course=course)
 
     if not questions.exists():
-        messages.warning(request, f"No questions available for '{course.name}' yet.")
-        return redirect('exam_app:student_dashboard') # Or wherever appropriate
+        messages.warning(request, "This course currently has no questions. You cannot start an exam.")
+        return redirect('exam_app:student_dashboard')
+
+    # Check if student already has a pending or completed exam for this course
+    existing_exam = Exam.objects.filter(student=request.user, course=course).first()
+    if existing_exam:
+        # If student has a previous attempt, offer to retake or view results
+        # For simplicity, let's just create a new one for now if they haven't completed it
+        # Or you might want to redirect them to their existing incomplete exam
+        if not existing_exam.is_completed:
+            messages.info(request, "You have an uncompleted attempt for this exam. Resuming...")
+            # Redirect to resume existing exam rather than starting a new one
+            return redirect('exam_app:exam_take', exam_pk=existing_exam.pk)
+        else:
+            messages.info(request, "You have already completed an exam for this course. You can view your results or start a new attempt.")
+            # You might want to provide an option to start a new attempt here too,
+            # or prevent multiple attempts if that's your policy.
+            # For now, let's allow a new attempt by just creating one below.
 
     # Create a new Exam instance
     exam = Exam.objects.create(
         student=request.user,
         course=course,
-        total_questions=questions.count(),
-        total_possible_marks=questions.count() # Assuming 1 mark per question for now
+        start_time=timezone.now() # <--- SET THE START TIME HERE
     )
-    messages.info(request, f"Exam for '{course.name}' started.")
+
+    messages.success(request, f"Exam for {course.name} has started. Good luck!")
     return redirect('exam_app:exam_take', exam_pk=exam.pk)
 
+# Define the StudentAnswerFormSet outside the view, or dynamically
+StudentAnswerFormSet = formset_factory(StudentExamForm, extra=0) # extra=0 means no empty forms by default
+
+@login_required
+@user_passes_test(is_student)
 def exam_take(request, exam_pk):
-    exam = get_object_or_404(Exam, pk=exam_pk, student=request.user, is_completed=False)
-    questions = Question.objects.filter(course=exam.course).order_by('id') # Order consistently
+    exam = get_object_or_404(Exam, pk=exam_pk, student=request.user)
+
+    # Prevent taking completed exams
+    if exam.is_completed:
+        messages.info(request, "This exam has already been completed.")
+        return redirect('exam_app:exam_result_detail', exam_pk=exam.pk)
+
+    exam_questions = Question.objects.filter(course=exam.course).order_by('id')
+
+    if not exam_questions.exists():
+        messages.warning(request, "This course currently has no questions. You cannot take an exam.")
+        exam.is_completed = True # Mark exam as completed if no questions
+        exam.save()
+        return redirect('exam_app:student_dashboard')
+
+    # Prepare initial data for pre-populating the form (from existing answers)
+    initial_answers_data = []
+    for question in exam_questions:
+        student_answer = StudentAnswer.objects.filter(exam=exam, question=question).first()
+        if student_answer:
+            initial_answers_data.append({
+                'question_id': question.pk,
+                'chosen_answer': student_answer.chosen_answer,
+            })
+
+    # Initialize 'form' here, outside of the if/else for request.method
+    # This ensures 'form' is always defined before rendering the template.
+    form = StudentExamForm(questions=exam_questions, initial_answers=initial_answers_data) # <--- Initialized for GET/default
 
     if request.method == 'POST':
-        form = StudentExamForm(request.POST, questions=questions)
+        form = StudentExamForm(request.POST, questions=exam_questions, initial_answers=initial_answers_data)
         if form.is_valid():
-            score = 0
-            total_questions_answered = 0
-            student_answers_to_create = []
-
-            # Use a transaction to ensure all answers and results are saved or none are
             with transaction.atomic():
-                for answer_data in form.get_answers():
-                    question = get_object_or_404(Question, pk=answer_data['question_id'])
-                    chosen_answer = answer_data['chosen_answer']
-                    is_correct = (chosen_answer == question.correct_choice)
+                elapsed_time_seconds = (timezone.now() - exam.start_time).total_seconds()
+                time_limit_seconds = exam.course.time_limit_minutes * 60
 
-                    if is_correct:
-                        score += 1
+                if elapsed_time_seconds > time_limit_seconds:
+                    messages.warning(request, "Time's up! Your exam has been automatically submitted.")
+                    exam.is_completed = True
+                    exam.save()
+                    calculate_exam_score(request, exam) # <--- PASS 'request' HERE
+                    return redirect('exam_app:exam_result_detail', exam_pk=exam.pk)
 
-                    student_answers_to_create.append(
-                        StudentAnswer(
-                            exam=exam,
-                            question=question,
-                            chosen_answer=chosen_answer,
-                            is_correct=is_correct
-                        )
-                    )
-                    total_questions_answered += 1
+                # ... (save answers logic) ...
 
-                # Bulk create all student answers
-                StudentAnswer.objects.bulk_create(student_answers_to_create)
-
-                # Update the Exam instance
-                exam.score = score
-                exam.total_questions = total_questions_answered # Ensure consistency with form
-                exam.total_possible_marks = total_questions_answered # Assuming 1 mark per question
                 exam.is_completed = True
                 exam.save()
+                calculate_exam_score(request, exam) # <--- PASS 'request' HERE
 
-                # Create or update the Result
-                percentage = (score / total_questions_answered) * 100 if total_questions_answered > 0 else 0
-                Result.objects.create(
-                    student=request.user,
-                    course=exam.course,
-                    exam=exam, # Link to the specific exam attempt
-                    score=score,
-                    total_marks=total_questions_answered, # Max marks for this exam
-                    percentage=percentage
-                )
-
-            messages.success(request, f"Exam completed! You scored {score} out of {total_questions_answered}.")
-            return redirect('exam_app:exam_result_detail', exam_pk=exam.pk)
+                messages.success(request, "Exam submitted successfully!")
+                return redirect('exam_app:exam_result_detail', exam_pk=exam.pk)
         else:
-            messages.error(request, "Please answer all questions before submitting.")
-    else:
-        form = StudentExamForm(questions=questions)
-
+            messages.error(request, "Please correct the errors below.")
+            print(form.errors)    
     context = {
         'exam': exam,
-        'form': form,
-        'questions': questions, # Pass questions for display (e.g., question numbers)
-        'page_title': f'Take Exam: {exam.course.name}'
+        'form': form, # This 'form' will always be defined now
     }
     return render(request, 'students/exam_take.html', context)
 
+def calculate_exam_score(request, exam): # <--- ADD 'request' here
+    total_score = 0
+    total_possible_score = 0
+
+    student_answers = StudentAnswer.objects.filter(exam=exam)
+
+    for student_answer in student_answers:
+        question = student_answer.question
+        total_possible_score += question.marks
+
+        correct_answer = question.correct_choice.strip().lower() if question.correct_choice else ''
+        submitted_answer = student_answer.chosen_answer.strip().lower() if student_answer.chosen_answer else ''
+
+        if question.question_type in ['MCQ', 'TF']:
+            if submitted_answer == correct_answer:
+                total_score += question.marks
+
+    percentage = (total_score / total_possible_score * 100) if total_possible_score > 0 else 0
+
+    result, created = Result.objects.get_or_create(
+        exam=exam,
+        defaults={
+            'student': exam.student,
+            'course': exam.course,
+            'score': total_score,
+            'total_marks': total_possible_score,
+            'percentage': percentage,
+        }
+    )
+    if not created:
+        result.score = total_score
+        result.total_marks = total_possible_score
+        result.percentage = percentage
+        result.save()
+
+    # Pass the 'request' object to messages.info()
+    messages.info(request, f"Your exam for {exam.course.name} has been graded. Score: {total_score}/{total_possible_score} ({percentage:.2f}%)") # <--- Use 'request' here
+    return result
+
 def exam_result_detail(request, exam_pk):
+    # Get the exam instance
     exam = get_object_or_404(Exam, pk=exam_pk, student=request.user)
-    result = get_object_or_404(Result, exam=exam) # Get the associated result
-    student_answers = StudentAnswer.objects.filter(exam=exam).select_related('question').order_by('question__id')
+
+    # Get the result associated with this exam (using OneToOneField primary_key)
+    # Result will be available if calculate_exam_score was successful
+    result = get_object_or_404(Result, exam=exam)
+
+    # Get all questions for the course associated with this exam
+    # Order by ID to ensure consistent display
+    exam_questions = Question.objects.filter(course=exam.course).order_by('id')
+
+    # Get all student answers for this specific exam
+    # Use Prefetch to optimize fetching related questions if you iterate a lot
+    student_answers = StudentAnswer.objects.filter(exam=exam).select_related('question')
+
+    # Create a dictionary for quick lookup of student answers by question ID
+    student_answers_dict = {sa.question_id: sa for sa in student_answers}
+
+    # Prepare a list of structured data for the template
+    # Each item in this list will represent a question with its details and result
+    question_results = []
+    for question in exam_questions:
+        student_answer_obj = student_answers_dict.get(question.pk)
+        chosen_answer = student_answer_obj.chosen_answer if student_answer_obj else "Not Answered"
+        is_correct = False
+        marks_awarded = 0
+
+        # Determine correctness based on question type
+        if question.question_type in ['MCQ', 'TF']:
+            if chosen_answer.strip().lower() == (question.correct_choice.strip().lower() if question.correct_choice else ''):
+                is_correct = True
+                marks_awarded = question.marks
+        # For 'SA' or 'Essay', manual review is typically needed,
+        # so `is_correct` here defaults to False unless explicitly marked otherwise in `StudentAnswer` later.
+        # For now, it's false, and marks_awarded is 0 for those types.
+
+        question_results.append({
+            'question_number': question.pk, # Using PK for unique ID, or forloop.counter in template
+            'question_text': question.question_text,
+            'question_type': question.get_question_type_display(),
+            'choice1': question.choice1,
+            'choice2': question.choice2,
+            'choice3': question.choice3,
+            'choice4': question.choice4,
+            'student_answer': chosen_answer,
+            'correct_answer': question.correct_choice, # Will be None for SA/Essay but useful for MCQ/TF
+            'is_correct': is_correct,
+            'marks_awarded': marks_awarded,
+            'total_question_marks': question.marks,
+        })
 
     context = {
         'exam': exam,
         'result': result,
-        'student_answers': student_answers,
-        'page_title': f'Exam Result: {exam.course.name}'
-    }
-    return render(request, 'students/exam_result_detail.html', context)
-
-def exam_result_detail(request, exam_pk):
-    exam = get_object_or_404(Exam, pk=exam_pk, student=request.user)
-    result = get_object_or_404(Result, exam=exam) # Get the associated result
-    student_answers = StudentAnswer.objects.filter(exam=exam).select_related('question').order_by('question__id')
-
-    context = {
-        'exam': exam,
-        'result': result,
-        'student_answers': student_answers,
-        'page_title': f'Exam Result: {exam.course.name}'
+        'question_results': question_results, # New data to pass
     }
     return render(request, 'students/exam_result_detail.html', context)
 
@@ -492,3 +585,124 @@ def student_exam_history(request):
         'page_title': 'My Exam History'
     }
     return render(request, 'students/student_exam_history.html', context)
+
+# --- Teacher Question Management Views ---
+
+@login_required
+@user_passes_test(is_teacher)
+def teacher_question_list(request, course_pk):
+    course = get_object_or_404(Course, pk=course_pk, teacher=request.user)
+    questions = Question.objects.filter(course=course).order_by('id')
+    context = {
+        'course': course,
+        'questions': questions
+    }
+    return render(request, 'teachers/question_list.html', context)
+
+
+@login_required
+@user_passes_test(is_teacher)
+def teacher_question_create(request, course_pk):
+    course = get_object_or_404(Course, pk=course_pk, teacher=request.user)
+
+    if request.method == 'POST':
+        # Pass the course_instance to the form's __init__
+        form = QuestionForm(request.POST, course_instance=course)
+        if form.is_valid():
+            question = form.save(commit=False)
+            question.course = course # Ensure the question is linked to the correct course
+            question.save()
+            messages.success(request, 'Question added successfully!')
+            return redirect('exam_app:teacher_question_list', course_pk=course.pk)
+        else:
+            messages.error(request, 'Error adding question. Please correct the errors.')
+    else:
+        # Pass the course_instance to the form for initial setup
+        form = QuestionForm(course_instance=course)
+
+    context = {
+        'form': form,
+        'course': course,
+        'form_title': 'Add New Question'
+    }
+    return render(request, 'teachers/question_form.html', context)
+
+
+@login_required
+@user_passes_test(is_teacher)
+def teacher_question_update(request, pk):
+    question = get_object_or_404(Question, pk=pk)
+    course = question.course # Get the course related to this question
+
+    # Ensure the logged-in teacher owns this course
+    if course.teacher != request.user:
+        messages.error(request, "You do not have permission to edit this question.")
+        return redirect('exam_app:teacher_dashboard') # Or appropriate redirect
+
+    if request.method == 'POST':
+        # Pass the course_instance for consistency, though it won't change for update
+        form = QuestionForm(request.POST, instance=question, course_instance=course)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Question updated successfully!')
+            return redirect('exam_app:teacher_question_list', course_pk=course.pk)
+        else:
+            messages.error(request, 'Error updating question. Please correct the errors.')
+    else:
+        form = QuestionForm(instance=question, course_instance=course)
+
+    context = {
+        'form': form,
+        'course': course,
+        'question': question,
+        'form_title': 'Update Question'
+    }
+    return render(request, 'teachers/question_form.html', context)
+
+
+@login_required
+@user_passes_test(is_teacher)
+def teacher_question_delete(request, pk):
+    question = get_object_or_404(Question, pk=pk)
+    course = question.course
+
+    # Ensure the logged-in teacher owns this course
+    if course.teacher != request.user:
+        messages.error(request, "You do not have permission to delete this question.")
+        return redirect('exam_app:teacher_dashboard') # Or appropriate redirect
+
+    if request.method == 'POST':
+        question.delete()
+        messages.success(request, 'Question deleted successfully!')
+        return redirect('exam_app:teacher_question_list', course_pk=course.pk)
+
+    context = {
+        'question': question,
+        'course': course
+    }
+    return render(request, 'teachers/question_confirm_delete.html', context)
+
+
+# --- Teacher Course Management List (if not already existing) ---
+@login_required
+@user_passes_test(is_teacher)
+def teacher_course_list(request):
+    courses = Course.objects.filter(teacher=request.user).order_by('name')
+    context = {
+        'courses': courses
+    }
+    return render(request, 'teachers/course_list.html', context) # You will create this template next
+
+@login_required
+@user_passes_test(is_teacher)
+def teacher_student_list(request):
+    # This will be implemented fully later to list students related to teacher's courses
+    messages.info(request, "Student list view is coming soon!")
+    return render(request, 'teachers/coming_soon.html', {'feature_name': 'My Students'})
+
+@login_required
+@user_passes_test(is_teacher)
+def teacher_salary_view(request):
+    # This will be implemented fully later to show salary info
+    messages.info(request, "Teacher salary view is coming soon!")
+    return render(request, 'teachers/coming_soon.html', {'feature_name': 'Teacher Salary'})

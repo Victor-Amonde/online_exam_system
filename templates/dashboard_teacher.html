@@ -15,7 +15,8 @@
                 </div>
                 <div class="card-body">
                     <p class="card-text">Add, edit, or delete courses you teach.</p>
-		    <a href="{% url 'exam_app:course_list' %}" class="btn btn-outline-primary">Manage Courses</a>
+		    {#<a href="{% url 'exam_app:course_list' %}" class="btn btn-outline-primary">Manage Courses</a>#}
+		    <a href="{% url 'exam_app:teacher_course_list' %}" class="btn btn-light">Manage Courses</a>
                 </div>
             </div>
         </div>
@@ -26,7 +27,8 @@
                 </div>
                 <div class="card-body">
                     <p class="card-text">Create and update question sets for your courses.</p>
-                    <a href="#" class="btn btn-outline-danger">Manage Questions</a>
+		    {#<a href="#" class="btn btn-outline-danger">Manage Questions</a>#}
+		    <a href="{% url 'exam_app:teacher_course_list' %}" class="btn btn-light">Manage Questions</a>
                 </div>
             </div>
         </div>
@@ -39,7 +41,8 @@
                 </div>
                 <div class="card-body">
                     <p class="card-text">View the total number of students.</p>
-                    <a href="#" class="btn btn-outline-info">View Students</a>
+		    {#<a href="#" class="btn btn-outline-info">View Students</a>#}
+		    <a href="{% url 'exam_app:teacher_student_list' %}" class="btn btn-light">View Students</a>
                 </div>
             </div>
         </div>
@@ -50,7 +53,8 @@
                 </div>
                 <div class="card-body">
                     <p class="card-text">Your salary information will appear here once set by admin.</p>
-                    <a href="#" class="btn btn-outline-secondary">View Salary</a>
+		    {#<a href="#" class="btn btn-outline-secondary">View Salary</a>#}
+		    <a href="{% url 'exam_app:teacher_salary_view' %}" class="btn btn-light">View Salary</a>
                 </div>
             </div>
         </div>

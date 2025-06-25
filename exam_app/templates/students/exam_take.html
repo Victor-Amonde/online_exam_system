@@ -1,58 +1,153 @@
 {% extends 'base.html' %}
-{% load exam_filters %} {# Load your custom filter if needed here too #}
+{% load static %}
 
-{% block title %}{{ page_title }}{% endblock %}
+{% block title %}Take Exam: {{ exam.course.name }}{% endblock %}
+
+{% block extra_head %}
+    <style>
+        .question-block {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .question-block label {
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .form-check {
+            margin-bottom: 5px;
+        }
+        .form-check-input {
+            margin-right: 8px;
+        }
+        .errorlist {
+            color: red;
+            list-style-type: none;
+            padding-left: 0;
+            margin-top: 5px;
+        }
+        .errorlist li {
+            font-size: 0.9em;
+        }
+        #timer-display {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #007bff; /* Blue color */
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2 class="mb-4">{{ page_title }}</h2>
-    <p class="lead">Answer the following questions for **{{ exam.course.name }}**</p>
-
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    <div class="container mt-4">
+        <div class="card">
+            <div class="card-header">
+                <h2>{{ exam.course.name }} Exam</h2>
+                <div>
+                    Time Limit: {{ exam.course.time_limit_minutes }} minutes
+                    <br>
+                    Time remaining: <span id="time-remaining-display"></span>
+                </div>
             </div>
-        {% endfor %}
-    {% endif %}
-
-    <form method="post" action="{% url 'exam_app:exam_take' exam.pk %}">
-        {% csrf_token %}
-
-        <div class="card mb-4">
             <div class="card-body">
-                {% for field in form %}
-                    <div class="mb-3">
-                        <label for="{{ field.id_for_label }}" class="form-label fs-5">{{ field.label }}</label>
-                        <div class="form-check">
-                            {# Render radio buttons manually for better control and Bootstrap styling #}
-                            {% for radio in field %}
-                                <input type="radio"
-                                       name="{{ field.html_name }}"
-                                       id="{{ radio.id_for_label }}"
-                                       value="{{ radio.data.value }}"
-                                       {% if radio.data.selected %}checked{% endif %}
-                                       class="{{ radio.data.attrs.class }}"
-                                       {% if radio.data.attrs.required %}required{% endif %}
-                                       >
-                                <label class="form-check-label" for="{{ radio.id_for_label }}">
-                                    {{ radio.choice_label }}
-                                </label><br>
-                            {% endfor %}
-                        </div>
-                        {% if field.errors %}
-                            <div class="text-danger small mt-1">
-                                {% for error in field.errors %}{{ error }}{% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    <hr> {# Separator between questions #}
-                {% endfor %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post" id="exam-form" action="{% url 'exam_app:exam_take' exam_pk=exam.pk %}">
+                    {% csrf_token %}
+
+		    {% for field in form %}
+			<div class="question-block">
+			    {{ field.label_tag }} {# This renders the question text label #}
+			    <div class="options-container"> {# Add a container for the choices #}
+				{% for radio in field %} {# Loop over individual radio button options for this field #}
+				    <div class="form-check">
+					{{ radio.tag }} {# Renders the <input type="radio" ...> tag, which should have form-check-input class from forms.py #}
+					<label class="form-check-label" for="{{ radio.id_for_label }}"> {# Renders the <label> for the radio button #}
+					    {{ radio.choice_label }}
+					</label>
+				    </div>
+				{% endfor %}
+			    </div>
+			    {% if field.errors %}
+				<ul class="errorlist">
+				    {% for error in field.errors %}
+					<li>{{ error }}</li>
+				    {% endfor %}
+				</ul>
+			    {% endif %}
+			</div>
+		    {% endfor %}
+
+
+                <button type="submit" class="btn btn-primary mt-3">Submit Exam</button>
+                </form>
             </div>
         </div>
+    </div>
+{% endblock %}
 
-        <button type="submit" class="btn btn-success btn-lg mt-3">Submit Exam</button>
-    </form>
-</div>
+{% block extra_js %}
+    <script>
+        // Get start time and time limit from Django context
+        const startTimeStr = "{{ exam.start_time|date:'c' }}"; // 'c' for ISO 8601 format
+        const timeLimitMinutes = {{ exam.course.time_limit_minutes }};
+
+        const startTime = new Date(startTimeStr);
+        const timeLimitMs = timeLimitMinutes * 60 * 1000; // Convert minutes to milliseconds
+
+        const timeRemainingSpan = document.getElementById('time-remaining-display');
+        const examForm = document.getElementById('exam-form');
+        let timerInterval; // Declare timerInterval outside to be accessible for clearInterval
+
+        function updateTimer() {
+            const currentTime = new Date();
+            const elapsedTimeMs = currentTime - startTime;
+            let remainingMs = timeLimitMs - elapsedTimeMs;
+
+            if (remainingMs < 0) {
+                remainingMs = 0; // Ensure it doesn't go negative
+            }
+
+            const totalSeconds = Math.floor(remainingMs / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+
+            timeRemainingSpan.textContent = minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0');
+
+            if (remainingMs <= 0) {
+                timeRemainingSpan.textContent = "Time's up! Submitting exam...";
+                document.querySelector('button[type="submit"]').disabled = true;
+
+                // IMPORTANT DEBUG STEP: TEMPORARILY DISABLE AUTO-SUBMIT FOR TESTING
+                // If you uncomment the line below, the form will submit automatically when time runs out.
+                // For debugging the "field is required" error, comment this line out initially.
+                // Once you confirm manual submission works, you can uncomment it.
+                // examForm.submit(); // <--- This line submits the form automatically
+
+                clearInterval(timerInterval); // Stop the timer
+                // If you comment out examForm.submit(), you might want to add a message here
+                // like "Time's up! Please submit manually if you haven't."
+            }
+        }
+
+        // Run the timer immediately and then every second
+        updateTimer();
+        timerInterval = setInterval(updateTimer, 1000);
+
+        // Optional: Warn user if they try to leave the page
+        window.onbeforeunload = function() {
+            return "Your exam is in progress. Are you sure you want to leave?";
+        };
+    </script>
 {% endblock %}

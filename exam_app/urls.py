@@ -20,15 +20,16 @@ urlpatterns = [
     #path('admin/users/approve/<int:user_pk>/', views.admin_approve_user, name='admin_approve_user'),
 
      # Course Management URLs
-    path('courses/', views.course_list, name='course_list'),
+    path('teacher/courses/', views.teacher_course_list, name='teacher_course_list'),
+    #path('courses/', views.course_list, name='course_list'),
     path('courses/add/', views.course_create, name='course_create'),
     path('courses/<int:pk>/edit/', views.course_edit, name='course_edit'),
     path('courses/<int:pk>/delete/', views.course_delete, name='course_delete'),
     # Question Management URLs (nested under courses)
-    path('courses/<int:course_pk>/questions/', views.question_list, name='question_list'),
-    path('courses/<int:course_pk>/questions/add/', views.question_create, name='question_create'),
-    path('courses/<int:course_pk>/questions/<int:pk>/edit/', views.question_edit, name='question_edit'),
-    path('courses/<int:course_pk>/questions/<int:pk>/delete/', views.question_delete, name='question_delete'),
+    #path('courses/<int:course_pk>/questions/', views.question_list, name='question_list'),
+    #path('courses/<int:course_pk>/questions/add/', views.question_create, name='question_create'),
+    #path('courses/<int:course_pk>/questions/<int:pk>/edit/', views.question_edit, name='question_edit'),
+    #path('courses/<int:course_pk>/questions/<int:pk>/delete/', views.question_delete, name='question_delete'),
     # --- NEW URLs for Student Exam Flow ---
 
     # Student Dashboard to see available courses and results
@@ -50,5 +51,16 @@ urlpatterns = [
     path('teacher/results/', views.teacher_results_dashboard, name='teacher_results_dashboard'),
 
     # Detailed view of a specific student's exam attempt for teachers
-    path('teacher/results/<int:exam_pk>/detail/', views.teacher_exam_detail_results, name='teacher_exam_detail_results'), 
+    path('teacher/results/<int:exam_pk>/detail/', views.teacher_exam_detail_results, name='teacher_exam_detail_results'),
+     # Teacher Question Management URLs
+    path('teacher/courses/<int:course_pk>/questions/',
+         views.teacher_question_list, name='teacher_question_list'),
+    path('teacher/courses/<int:course_pk>/questions/create/',
+         views.teacher_question_create, name='teacher_question_create'),
+    path('teacher/questions/<int:pk>/update/',
+         views.teacher_question_update, name='teacher_question_update'),
+    path('teacher/questions/<int:pk>/delete/',
+         views.teacher_question_delete, name='teacher_question_delete'),
+    path('teacher/students/', views.teacher_student_list, name='teacher_student_list'),
+    path('teacher/salary/', views.teacher_salary_view, name='teacher_salary_view'),
 ]

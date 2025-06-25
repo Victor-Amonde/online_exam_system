@@ -23,7 +23,8 @@
                 </div>
                 <div class="card-body">
                     <p class="card-text">You are managing <strong>{{ courses_count }}</strong> courses.</p>
-                    <a href="{% url 'exam_app:course_list' %}" class="btn btn-primary mt-2">Manage Courses</a>
+		    {#<a href="{% url 'exam_app:course_list' %}" class="btn btn-primary mt-2">Manage Courses</a>#}
+		    <a href="{% url 'exam_app:teacher_course_list' %}" class="btn btn-light">Manage Courses</a>
                 </div>
             </div>
         </div>

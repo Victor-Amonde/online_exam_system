@@ -1,0 +1,46 @@
+{% extends 'base.html' %} {# Or 'dashboard_teacher.html' if appropriate #}
+{% load static %}
+
+{% block title %}My Courses{% endblock %}
+
+{% block content %}
+    <div class="container mt-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2>My Courses</h2>
+                {# Link to create a new course, if you implement teacher_course_create #}
+                {# <a href="{% url 'exam_app:teacher_course_create' %}" class="btn btn-success">Add New Course</a> #}
+            </div>
+            <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+
+                {% if courses %}
+                    <div class="list-group">
+                        {% for course in courses %}
+                            <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                <span>{{ course.name }} - {{ course.description }}</span>
+                                <div>
+                                    <a href="{% url 'exam_app:teacher_question_list' course_pk=course.pk %}" class="btn btn-sm btn-primary">Manage Questions</a>
+                                    {# Add links for course update/delete if you implement them #}
+                                    {# <a href="{% url 'exam_app:teacher_course_update' pk=course.pk %}" class="btn btn-sm btn-info ms-2">Edit Course</a> #}
+                                    {# <a href="{% url 'exam_app:teacher_course_delete' pk=course.pk %}" class="btn btn-sm btn-danger ms-2">Delete Course</a> #}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p>You haven't created any courses yet.</p>
+                    {# Link to create new course again #}
+                    {# <a href="{% url 'exam_app:teacher_course_create' %}" class="btn btn-info">Create Your First Course</a> #}
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'exam_app:teacher_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

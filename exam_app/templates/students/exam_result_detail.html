@@ -1,47 +1,94 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %} {# Or 'dashboard_student.html' if you have one #}
+{% load static %}
 
-{% block title %}{{ page_title }}{% endblock %}
+{% block title %}Exam Results for {{ exam.course.name }}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2 class="mb-4">{{ page_title }}</h2>
-    <p class="lead">Course: <strong>{{ exam.course.name }}</strong></p>
-    <p class="lead">Date Taken: <strong>{{ exam.date_taken|date:"F d, Y P" }}</strong></p>
+    <div class="container mt-4">
+        <div class="card">
+            <div class="card-header text-center">
+                <h2>Results for {{ exam.course.name }} Exam</h2>
+            </div>
+            <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
 
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h4>Your Score</h4>
-        </div>
-        <div class="card-body text-center">
-            <h3 class="display-4 text-primary">{{ result.score }} / {{ result.total_marks }}</h3>
-            <p class="fs-4">Percentage: <strong>{{ result.percentage|floatformat:2 }}%</strong></p>
-            {% if result.percentage >= 50 %} {# Example passing threshold #}
-                <span class="badge bg-success fs-5">Passed!</span>
-            {% else %}
-                <span class="badge bg-danger fs-5">Failed</span>
-            {% endif %}
-        </div>
-    </div>
+                <div class="row mb-4">
+                    <div class="col-md-6 text-center">
+                        <h4>Your Score: <span class="text-primary">{{ result.score }}</span> / <span class="text-secondary">{{ result.total_marks }}</span></h4>
+                    </div>
+                    <div class="col-md-6 text-center">
+                        <h4>Percentage: <span class="text-success">{{ result.percentage|floatformat:2 }}%</span></h4>
+                    </div>
+                </div>
 
-    <h3 class="mb-3">Detailed Answers:</h3>
-    <div class="list-group">
-        {% for student_answer in student_answers %}
-            <div class="list-group-item mb-3 {% if student_answer.is_correct %}list-group-item-success{% else %}list-group-item-danger{% endif %}">
-                <h5>Q{{ forloop.counter }}. {{ student_answer.question.question_text }}</h5>
-                <p class="mb-1">Your Answer: <strong>{{ student_answer.chosen_answer }}</strong></p>
-                <p class="mb-1">Correct Answer: <strong>{{ student_answer.question.correct_choice }}</strong></p>
-                {% if student_answer.is_correct %}
-                    <span class="badge bg-success">Correct</span>
+                <hr>
+
+                <h3>Question Breakdown:</h3>
+
+                {% if question_results %}
+                    {% for qr in question_results %}
+                        <div class="card mb-3 {% if qr.is_correct %}border-success{% else %}border-danger{% endif %}">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Question {{ forloop.counter }}: {{ qr.question_text }}</h5>
+                                <small class="text-muted">({{ qr.question_type }} - {{ qr.total_question_marks }} Marks)</small>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Your Answer:</strong>
+                                    <span class="{% if qr.is_correct %}text-success{% else %}text-danger{% endif %}">
+                                        {% if qr.question_type == 'MCQ' %}
+                                            {# For MCQ, display the full choice text if available #}
+                                            {% if qr.student_answer == qr.choice1 %} {{ qr.choice1 }}
+                                            {% elif qr.student_answer == qr.choice2 %} {{ qr.choice2 }}
+                                            {% elif qr.student_answer == qr.choice3 %} {{ qr.choice3 }}
+                                            {% elif qr.student_answer == qr.choice4 %} {{ qr.choice4 }}
+                                            {% else %}
+                                                {{ qr.student_answer }}
+                                            {% endif %}
+                                        {% else %}
+                                            {{ qr.student_answer }}
+                                        {% endif %}
+                                    </span>
+                                    {% if not qr.is_correct %}
+                                        <i class="fas fa-times-circle text-danger ms-2"></i> {# Font Awesome for incorrect #}
+                                    {% else %}
+                                        <i class="fas fa-check-circle text-success ms-2"></i> {# Font Awesome for correct #}
+                                    {% endif %}
+                                </p>
+
+                                {% if not qr.is_correct %}
+                                    <p><strong>Correct Answer:</strong>
+                                        <span class="text-success">
+                                            {% if qr.question_type == 'MCQ' %}
+                                                {# For MCQ, display the full choice text for correct answer if available #}
+                                                {% if qr.correct_answer == qr.choice1 %} {{ qr.choice1 }}
+                                                {% elif qr.correct_answer == qr.choice2 %} {{ qr.choice2 }}
+                                                {% elif qr.correct_answer == qr.choice3 %} {{ qr.choice3 }}
+                                                {% elif qr.correct_answer == qr.choice4 %} {{ qr.choice4 }}
+                                                {% else %}
+                                                    {{ qr.correct_answer }}
+                                                {% endif %}
+                                            {% else %}
+                                                {{ qr.correct_answer|default:"N/A (Short Answer/Essay)" }}
+                                            {% endif %}
+                                        </span>
+                                    </p>
+                                {% endif %}
+
+                                <p><strong>Marks Awarded:</strong> {{ qr.marks_awarded }} / {{ qr.total_question_marks }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
                 {% else %}
-                    <span class="badge bg-danger">Incorrect</span>
+                    <p>No questions or results found for this exam.</p>
                 {% endif %}
             </div>
-        {% endfor %}
+            <div class="card-footer text-center">
+                <a href="{% url 'exam_app:student_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+            </div>
+        </div>
     </div>
-
-    <div class="mt-4">
-        <a href="{% url 'exam_app:student_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
-        <a href="{% url 'exam_app:student_exam_history' %}" class="btn btn-info">View All My Results</a>
-    </div>
-</div>
 {% endblock %}
