@@ -1,0 +1,49 @@
+{% extends 'base.html' %} {# You can use 'dashboard_teacher.html' if you prefer #}
+{% load static %}
+
+{% block title %}My Salary Information{% endblock %}
+
+{% block content %}
+    <div class="container mt-4">
+        <div class="card">
+            <div class="card-header text-center">
+                <h2>My Salary Information</h2>
+            </div>
+            <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+
+                {% if salary %}
+                    <div class="row text-center my-4">
+                        <div class="col-md-6">
+                            <h4>Current Salary</h4>
+                            <h1 class="display-4 text-success">
+                                ${{ salary.amount|floatformat:2 }}
+                            </h1>
+                        </div>
+                        <div class="col-md-6">
+                            <h4>Date Set</h4>
+                            <p class="lead">{{ salary.date_set|date:"F d, Y" }} at {{ salary.date_set|time:"H:i" }}</p>
+                        </div>
+                    </div>
+                    <hr>
+                    <p class="text-muted text-center">
+                        This amount is your current fixed salary. For any questions, please contact the admin.
+                    </p>
+                {% else %}
+                    <div class="text-center my-5">
+                        <i class="fas fa-money-bill-wave fa-5x text-secondary mb-3"></i> {# Requires Font Awesome #}
+                        <p class="lead">No salary information has been set for you yet.</p>
+                        <p class="text-muted">Please contact the system administrator for more details.</p>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="card-footer text-center">
+                <a href="{% url 'exam_app:teacher_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

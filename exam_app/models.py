@@ -170,3 +170,22 @@ class Result(models.Model):
     def __str__(self):
         return f"{self.student.username}'s Result in {self.course.name}: {self.score}/{self.total_marks} ({self.percentage:.2f}%)"
 
+class Salary(models.Model):
+    """
+    Stores salary information for teachers.
+    """
+    teacher = models.OneToOneField(
+        'User',
+        on_delete=models.CASCADE,
+        limit_choices_to={'is_teacher': True, 'approved': True},
+        related_name='teacher_salary' # This allows fetching salary from user object: user.salary_info
+    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    date_set = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name_plural = 'Salaries'
+        ordering = ['-date_set'] # Order by most recent entry first
+
+    def __str__(self):
+        return f"{self.teacher.username}'s Salary: {self.amount}"

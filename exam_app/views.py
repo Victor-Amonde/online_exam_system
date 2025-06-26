@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test # Im
 from django.contrib import messages
 from .forms import CustomUserCreationForm, TeacherLoginForm, CourseForm, QuestionForm, StudentExamForm
 from django.db import transaction # Will use this for atomic saves
-from .models import User, Course, Question, Exam, StudentAnswer, Result, QUESTION_TYPES
+from .models import User, Course, Question, Exam, StudentAnswer, Result, QUESTION_TYPES, Salary
 from django.db.models import Prefetch # <--- ENSURE THIS IS THE LINE (from django.db.models)
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import AuthenticationForm # Ensure this is imported
@@ -696,13 +696,38 @@ def teacher_course_list(request):
 @login_required
 @user_passes_test(is_teacher)
 def teacher_student_list(request):
-    # This will be implemented fully later to list students related to teacher's courses
-    messages.info(request, "Student list view is coming soon!")
-    return render(request, 'teachers/coming_soon.html', {'feature_name': 'My Students'})
+    # Get all courses taught by the logged-in teacher
+    teachers_courses = Course.objects.filter(teacher=request.user)
+
+    # Get all exams taken for these courses
+    # Use values_list('student', flat=True) to get a list of student IDs
+    # Use distinct() to get only unique student IDs
+    student_ids_from_exams = Exam.objects.filter(course__in=teachers_courses).values_list('student', flat=True).distinct()
+
+    # Fetch the actual User objects for these unique student IDs
+    # Filter for users who are students (assuming your User model has is_student flag)
+    # Order them for consistent display
+    students = User.objects.filter(pk__in=student_ids_from_exams, is_student=True).order_by('first_name', 'last_name')
+
+    context = {
+        'students': students,
+        'courses': teachers_courses # Optionally pass courses if you want to show which courses they teach
+    }
+    return render(request, 'teachers/student_list.html', context) # Will render a new template
 
 @login_required
 @user_passes_test(is_teacher)
 def teacher_salary_view(request):
-    # This will be implemented fully later to show salary info
-    messages.info(request, "Teacher salary view is coming soon!")
-    return render(request, 'teachers/coming_soon.html', {'feature_name': 'Teacher Salary'})
+    try:
+        # Get the salary information for the logged-in teacher
+        # Use the related_name we defined: teacher_salary
+        salary = Salary.objects.get(teacher=request.user)
+    except Salary.DoesNotExist:
+        # If no salary is set for this teacher, create a message
+        messages.info(request, "No salary information has been set for you yet.")
+        salary = None # Set salary to None so the template can handle it
+
+    context = {
+        'salary': salary,
+    }
+    return render(request, 'teachers/teacher_salary.html', context) # Will render a new template

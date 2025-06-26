@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin # Import BaseUserAdmin
-from .models import User, Course, Question, Attempt, TeacherSalary
+from .models import User, Course, Question, Attempt, TeacherSalary, Salary, StudentAnswer, Result
 
 # Custom Admin for our User model
 class UserAdmin(BaseUserAdmin):
@@ -24,6 +24,13 @@ class UserAdmin(BaseUserAdmin):
     )
     search_fields = ('username', 'email', 'first_name', 'last_name')
     ordering = ('username',)
+
+@admin.register(Salary)
+class SalaryAdmin(admin.ModelAdmin):
+    list_display = ['teacher', 'amount', 'date_set']
+    list_filter = ['teacher']
+    search_fields = ['teacher__username', 'teacher__email']
+    raw_id_fields = ['teacher'] # Better for selecting a user from a large list    
 
 
 # Register your models
