@@ -585,6 +585,34 @@ def student_exam_history(request):
         'page_title': 'My Exam History'
     }
     return render(request, 'students/student_exam_history.html', context)
+@login_required
+@user_passes_test(is_student)
+def student_exam_list(request):
+    """
+    Lists all courses that a student can take as an exam.
+    """
+    # For simplicity, we list all active courses. You could filter by enrolled courses if you have an enrollment model.
+    available_exams = Course.objects.filter(is_active=True).order_by('name')
+
+    context = {
+        'courses': available_exams
+    }
+    return render(request, 'students/exam_list.html', context) # Renders the list of exams
+@login_required
+@user_passes_test(is_student)
+def student_exam_result_list(request):
+    """
+    Lists all the results of exams the student has taken.
+    """
+    # Fetch all results for the logged-in user
+    # We use select_related to efficiently fetch the related Exam and Course data in one query
+    student_results = Result.objects.filter(student=request.user).select_related('exam__course').order_by('-date_achieved')
+
+    context = {
+        'results': student_results
+    }
+    # Note the template path uses the 'students' plural directory
+    return render(request, 'students/exam_result_list.html', context)
 
 # --- Teacher Question Management Views ---
 

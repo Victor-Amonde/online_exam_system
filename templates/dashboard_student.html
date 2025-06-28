@@ -15,7 +15,8 @@
                 </div>
                 <div class="card-body">
                     <p class="card-text">List of courses/exams will appear here.</p>
-                    <a href="#" class="btn btn-outline-success">Browse Exams</a>
+		    {#<a href="#" class="btn btn-outline-success">Browse Exams</a>#}
+		    <a href="{% url 'exam_app:student_exam_list' %}" class="btn btn-light">Browse Exams</a> {# <-- Updated href #}
                 </div>
             </div>
         </div>
@@ -26,7 +27,8 @@
                 </div>
                 <div class="card-body">
                     <p class="card-text">View your scores and attempts for completed exams.</p>
-                    <a href="#" class="btn btn-outline-info">View Results</a>
+		    {#<a href="#" class="btn btn-outline-info">View Results</a>#}
+		    <a href="{% url 'exam_app:student_exam_result_list' %}" class="btn btn-light">View Results</a> {# <-- Updated href #}
                 </div>
             </div>
         </div>

@@ -40,6 +40,7 @@ class Course(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     teacher = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'is_teacher': True})
+    is_active = models.BooleanField(default=True) # <-- Add this line
     # --- NEW FIELD ---
     time_limit_minutes = models.PositiveIntegerField(
         default=60, # Default to 60 minutes (1 hour)

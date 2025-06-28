@@ -63,4 +63,8 @@ urlpatterns = [
          views.teacher_question_delete, name='teacher_question_delete'),
     path('teacher/students/', views.teacher_student_list, name='teacher_student_list'),
     path('teacher/salary/', views.teacher_salary_view, name='teacher_salary_view'),
+
+    # Student Exam & Results URLs
+    path('student/exams/', views.student_exam_list, name='student_exam_list'), # <-- You need this line
+    path('student/results/', views.student_exam_result_list, name='student_exam_result_list'), # <-- And this one for results
 ]
